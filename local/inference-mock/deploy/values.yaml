@@ -18,7 +18,8 @@ model: dsx-mock-llm
 
 # Power model (megawatts).
 power:
-  perRequestMW: 1
+  # Power drawn by a single in-flight request (1 request = 0.001 MW = 1 kW).
+  perRequestMW: 0.001
   maxMW: 96
   minMW: 0
   # Default cap when no load target is active.

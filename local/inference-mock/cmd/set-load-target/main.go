@@ -109,7 +109,7 @@ func main() {
 	if *clear {
 		log.Printf("set-load-target: published constraint removal to %s (correlation=%s)", topic, correlationID)
 	} else {
-		log.Printf("set-load-target: published %.1f MW cap to %s (feed=%q, correlation=%s)", *targetMW, topic, *feedTag, correlationID)
+		log.Printf("set-load-target: published %g MW cap to %s (feed=%q, correlation=%s)", *targetMW, topic, *feedTag, correlationID)
 	}
 }
 

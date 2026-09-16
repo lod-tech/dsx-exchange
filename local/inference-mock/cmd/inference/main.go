@@ -51,7 +51,7 @@ func main() {
 	api := httpapi.New(engine, cfg.Model, cfg.PrefillLatency, cfg.TokensPerSec, cfg.DefaultMaxTokens)
 	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: api.Handler()}
 	go func() {
-		log.Printf("inference: serving OpenAI-compatible API on %s (per-request %.2f MW, cap %.1f MW)",
+		log.Printf("inference: serving OpenAI-compatible API on %s (per-request %g MW, cap %.1f MW)",
 			cfg.HTTPAddr, cfg.PerRequestMW, cfg.DefaultMW)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("inference: http server error: %v", err)

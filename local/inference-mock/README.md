@@ -13,8 +13,8 @@ not part of the production charts.
 - Serves an OpenAI-compatible API (`/v1/models`, `/v1/chat/completions`,
   `/v1/completions`) with streaming, token accounting, and simulated latency.
 - Models power draw: each in-flight request draws a fixed amount of power
-  (1 MW by default), so effective load equals in-flight requests times per-request
-  power.
+  (0.001 MW, i.e. 1 kW, by default), so effective load equals in-flight requests
+  times per-request power.
 - Enforces DSX Flex load targets received from the event bus using the
   `best_effort` strategy: excess demand is queued briefly and then shed with
   HTTP 429 to hold power under the cap.
@@ -99,7 +99,7 @@ The service reads environment variables (Helm values set these):
 | `INFERENCE_HTTP_ADDR` | `:8080` | API listen address |
 | `INFERENCE_AGENT_ID` | `maxlps` | DSX Flex agent identifier |
 | `INFERENCE_FEED_TAG` | `ai-factory-main` | Power feed this workload represents |
-| `INFERENCE_PER_REQUEST_MW` | `1` | Power drawn per in-flight request |
+| `INFERENCE_PER_REQUEST_MW` | `0.001` | Power drawn per in-flight request (MW) |
 | `INFERENCE_DEFAULT_MW` | `96` | Cap when no load target is active |
 | `INFERENCE_POWER_MAX_MW` | `96` | Facility power ceiling (metadata) |
 | `INFERENCE_MAX_QUEUE` | `256` | Queued requests before shedding |
@@ -110,6 +110,7 @@ The service reads environment variables (Helm values set these):
 ## Scope and limitations
 
 - Covers the CSC site. CPC-1/CPC-2 could be added with additional agents.
-- Power is a demonstration model (1 request = 1 MW), not a real GPU power draw.
+- Power is a demonstration model (1 request = 0.001 MW = 1 kW), not a real GPU
+  power draw.
 - The `data` field is plaintext JSON; JWS signing and verification are not yet
   enabled.

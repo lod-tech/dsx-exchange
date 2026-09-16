@@ -76,6 +76,7 @@ type Power struct {
 	AcceptedPerSec float64   `json:"acceptedPerSec"`
 	ShedPerSec     float64   `json:"shedPerSec"`
 	InFlight       int       `json:"inFlight"`
+	PerRequestMW   float64   `json:"perRequestMw"`
 	PowerMW        float64   `json:"powerMw"`
 	TargetMW       float64   `json:"targetMw"`
 	TargetActive   bool      `json:"targetActive"`

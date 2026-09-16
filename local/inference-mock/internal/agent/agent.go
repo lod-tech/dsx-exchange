@@ -55,6 +55,7 @@ type Telemetry struct {
 	InFlight       int     `json:"in_flight"`
 	Queued         int     `json:"queued"`
 	Allowed        int     `json:"allowed"`
+	PerRequestMW   float64 `json:"per_request_mw"`
 	PowerMW        float64 `json:"power_mw"`
 	TargetMW       float64 `json:"target_mw"`
 	EffectiveCapMW float64 `json:"effective_cap_mw"`
@@ -382,9 +383,10 @@ func (a *Agent) publishTelemetry() {
 		InFlight:       snap.InFlight,
 		Queued:         snap.Queued,
 		Allowed:        snap.Allowed,
-		PowerMW:        round2(snap.PowerMW),
-		TargetMW:       round2(snap.TargetMW),
-		EffectiveCapMW: round2(snap.EffectiveCapMW),
+		PerRequestMW:   snap.PerRequestMW,
+		PowerMW:        round3(snap.PowerMW),
+		TargetMW:       round3(snap.TargetMW),
+		EffectiveCapMW: round3(snap.EffectiveCapMW),
 		TargetActive:   snap.TargetActive,
 		Compliant:      snap.Compliant,
 		AcceptedTotal:  snap.AcceptedTotal,
@@ -428,4 +430,8 @@ func parseTime(s string) *time.Time {
 
 func round2(v float64) float64 {
 	return float64(int64(v*100+0.5)) / 100
+}
+
+func round3(v float64) float64 {
+	return float64(int64(v*1000+0.5)) / 1000
 }

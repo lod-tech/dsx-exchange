@@ -61,7 +61,7 @@ func FromEnv() (*Config, error) {
 		AgentID:           env("INFERENCE_AGENT_ID", "maxlps"),
 		FeedTag:           env("INFERENCE_FEED_TAG", "ai-factory-main"),
 		Model:             env("INFERENCE_MODEL", "dsx-mock-llm"),
-		PerRequestMW:      envFloat("INFERENCE_PER_REQUEST_MW", 1.0),
+		PerRequestMW:      envFloat("INFERENCE_PER_REQUEST_MW", 0.001),
 		PowerMaxMW:        envFloat("INFERENCE_POWER_MAX_MW", 96.0),
 		PowerMinMW:        envFloat("INFERENCE_POWER_MIN_MW", 0.0),
 		DefaultMW:         envFloat("INFERENCE_DEFAULT_MW", 96.0),

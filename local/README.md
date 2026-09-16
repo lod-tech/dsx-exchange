@@ -148,7 +148,8 @@ connect your own OAuth2 application.
 ### AI Factory Power (DSX Flex)
 
 The local stack also deploys the mock AI inference service in `csc-event-bus`. It
-serves an OpenAI-compatible API where each in-flight request draws 1 MW, and acts
+serves an OpenAI-compatible API where each in-flight request draws 0.001 MW (1 kW),
+and acts
 as a DSX Flex agent that enforces power caps received from the event bus. Drive
 load with `make loadgen`, cap power with `make set-load-target`, and watch the
 "AI Factory Power" charts on the dashboard. See

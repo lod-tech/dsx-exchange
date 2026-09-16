@@ -99,7 +99,7 @@ func TestHandleLoadTargetEmitsNotice(t *testing.T) {
 	if len(sink.notices) != 1 {
 		t.Fatalf("expected 1 notice, got %d", len(sink.notices))
 	}
-	if !strings.Contains(sink.notices[0].Text, "20.0 MW") {
+	if !strings.Contains(sink.notices[0].Text, "20 MW") {
 		t.Errorf("notice text = %q", sink.notices[0].Text)
 	}
 }

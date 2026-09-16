@@ -43,6 +43,7 @@ type telemetryMsg struct {
 	AcceptedPerSec float64 `json:"accepted_per_sec"`
 	ShedPerSec     float64 `json:"shed_per_sec"`
 	InFlight       int     `json:"in_flight"`
+	PerRequestMW   float64 `json:"per_request_mw"`
 	PowerMW        float64 `json:"power_mw"`
 	TargetMW       float64 `json:"target_mw"`
 	EffectiveCapMW float64 `json:"effective_cap_mw"`
@@ -63,6 +64,7 @@ func (s *Subscriber) handleTelemetry(data []byte) {
 		AcceptedPerSec: t.AcceptedPerSec,
 		ShedPerSec:     t.ShedPerSec,
 		InFlight:       t.InFlight,
+		PerRequestMW:   t.PerRequestMW,
 		PowerMW:        t.PowerMW,
 		TargetMW:       t.EffectiveCapMW,
 		TargetActive:   t.TargetActive,
@@ -148,7 +150,7 @@ func (s *Subscriber) handleBreach(data []byte) {
 		level = "info"
 		text = fmt.Sprintf("Power breach resolved on %s", b.FeedTag)
 	} else {
-		text = fmt.Sprintf("Power breach %s (%s): %.1f MW over %.1f MW target on %s",
+		text = fmt.Sprintf("Power breach %s (%s): %g MW over %g MW target on %s",
 			b.Status, b.Severity, b.MeasuredLoad.megawatts(), b.Target.LoadConstraint.megawatts(), b.FeedTag)
 	}
 	s.sink.PushNotice(model.Notice{Kind: "breach", Level: level, Text: text, Time: time.Now().UTC()})
@@ -175,11 +177,11 @@ func (s *Subscriber) handlePowerState(data []byte) {
 		switch st.Event {
 		case "start_ramp_down", "start_ramp_up":
 			s.sink.PushNotice(model.Notice{Kind: "ramp", Level: "info",
-				Text: fmt.Sprintf("%s on %s (load %.1f MW)", label(st.Event), feed, st.CalculatedLoad.megawatts()),
+				Text: fmt.Sprintf("%s on %s (load %g MW)", label(st.Event), feed, st.CalculatedLoad.megawatts()),
 				Time: time.Now().UTC()})
 		case "end_ramp_down", "end_ramp_up":
 			s.sink.PushNotice(model.Notice{Kind: "ramp", Level: "info",
-				Text: fmt.Sprintf("%s complete on %s (load %.1f MW)", label(st.Event), feed, st.CalculatedLoad.megawatts()),
+				Text: fmt.Sprintf("%s complete on %s (load %g MW)", label(st.Event), feed, st.CalculatedLoad.megawatts()),
 				Time: time.Now().UTC()})
 		}
 	}
@@ -220,7 +222,7 @@ func (s *Subscriber) handleLoadTarget(subject string, data []byte) {
 			text = fmt.Sprintf("%s cleared the power cap on %s", isv, feed)
 		} else {
 			ts.ValueMW = t.LoadConstraint.megawatts()
-			text = fmt.Sprintf("%s set power cap to %.1f MW on %s", isv, ts.ValueMW, feed)
+			text = fmt.Sprintf("%s set power cap to %g MW on %s", isv, ts.ValueMW, feed)
 		}
 
 		s.mu.Lock()
