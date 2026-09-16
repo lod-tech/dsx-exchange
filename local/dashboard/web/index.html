@@ -139,63 +139,30 @@ SPDX-License-Identifier: Apache-2.0
 
     <dialog id="conn-dialog" class="conn-dialog">
       <div class="conn-dialog-head">
-        <h2>Connect to DSX Exchange (mock)</h2>
+        <h2>Connect to DSX Exchange</h2>
         <button id="conn-dialog-close" class="conn-dialog-close" type="button" aria-label="Close">&times;</button>
       </div>
       <p class="conn-hint">
-        Endpoints and credentials for wiring external systems into the local
-        stack. Addresses are shown for in-cluster clients and for host access via
-        <code>kubectl port-forward</code>. Credentials are local-dev defaults.
+        Public endpoints and credentials external systems use to reach this
+        deployment. These addresses come from the dashboard's configuration.
         Click any value to copy.
       </p>
 
       <section class="conn-section">
         <h3>Completion API &mdash; for the EDN system</h3>
-        <p class="conn-sub">OpenAI-compatible HTTP API. Each in-flight request draws the configured per-request power. No auth is enforced on the mock.</p>
-        <dl class="conn-grid">
-          <dt>In-cluster base URL</dt>
-          <dd><code class="copyable">http://dsx-inference.csc-event-bus.svc.cluster.local/v1</code></dd>
-          <dt>Via shared gateway</dt>
-          <dd><code class="copyable">http://&lt;shared-gateway host&gt;/v1</code> <span class="conn-note">(gateway <code>shared-gateway</code> in <code>csc-gateway</code>, path prefix <code>/v1</code>)</span></dd>
-          <dt>From your machine</dt>
-          <dd><code class="copyable">kubectl -n csc-event-bus port-forward svc/dsx-inference 8081:80</code><br /><code class="copyable">http://127.0.0.1:8081/v1</code></dd>
-          <dt>Endpoints</dt>
-          <dd><code class="copyable">/v1/models</code> &middot; <code class="copyable">/v1/chat/completions</code> &middot; <code class="copyable">/v1/completions</code></dd>
-          <dt>Model name</dt>
-          <dd><code class="copyable">dsx-mock-llm</code></dd>
-          <dt>Auth</dt>
-          <dd>None (open endpoint)</dd>
-          <dt>Example</dt>
-          <dd><code class="copyable">curl http://127.0.0.1:8081/v1/chat/completions -H 'content-type: application/json' -d '{"model":"dsx-mock-llm","messages":[{"role":"user","content":"hi"}]}'</code></dd>
+        <p class="conn-sub">OpenAI-compatible HTTP API. Each in-flight request draws the configured per-request power. Point your EDN endpoint at the base URL below.</p>
+        <dl class="conn-grid" id="conn-completion">
+          <dt>Loading&hellip;</dt>
+          <dd></dd>
         </dl>
       </section>
 
       <section class="conn-section">
         <h3>DSX Flex over MQTT &mdash; for the Energy system (ISV)</h3>
         <p class="conn-sub">Publish power targets and subscribe to power-state / breach feedback. Messages are CloudEvents 1.0.2 JSON over MQTT, authenticated with an OAuth2 token in the MQTT password.</p>
-        <dl class="conn-grid">
-          <dt>Broker (in-cluster)</dt>
-          <dd><code class="copyable">tcp://nats.csc-event-bus.svc.cluster.local:1883</code></dd>
-          <dt>Broker (from your machine)</dt>
-          <dd><code class="copyable">kubectl -n csc-event-bus port-forward svc/nats 1883:1883</code><br /><code class="copyable">tcp://127.0.0.1:1883</code></dd>
-          <dt>OAuth2 token URL (in-cluster)</dt>
-          <dd><code class="copyable">http://event-bus.idp.svc.cluster.local:5556/token</code></dd>
-          <dt>OAuth2 token URL (from your machine)</dt>
-          <dd><code class="copyable">kubectl -n idp port-forward svc/event-bus 5556:5556</code><br /><code class="copyable">http://127.0.0.1:5556/token</code></dd>
-          <dt>Client ID / secret</dt>
-          <dd><code class="copyable">grid-isv</code> / <code class="copyable">grid-isv-secret</code></dd>
-          <dt>OAuth2 scope / grant</dt>
-          <dd><code class="copyable">mqtt</code> &middot; client_credentials</dd>
-          <dt>MQTT username / password</dt>
-          <dd><code class="copyable">oauthtoken</code> / &lt;access token&gt;</dd>
-          <dt>Publish (set power target)</dt>
-          <dd><code class="copyable">grid/v1/isv/&lt;isv-id&gt;/loadtarget/set</code> <span class="conn-note">e.g. <code>acme-energy</code></span></dd>
-          <dt>Subscribe (feedback)</dt>
-          <dd><code class="copyable">grid/v1/dsx-flex-agent/maxlps/powerstate/status</code><br /><code class="copyable">grid/v1/dsx-flex-agent/maxlps/powerbreach</code></dd>
-          <dt>CloudEvents</dt>
-          <dd>type <code class="copyable">grid.loadtarget.set.v1</code> &middot; source <code class="copyable">//grid/v1/isv/&lt;isv-id&gt;</code> &middot; feed <code class="copyable">ai-factory-main</code></dd>
-          <dt>Reference CLI</dt>
-          <dd><code class="copyable">make set-load-target</code> <span class="conn-note">(local/inference-mock/cmd/set-load-target)</span></dd>
+        <dl class="conn-grid" id="conn-flex">
+          <dt>Loading&hellip;</dt>
+          <dd></dd>
         </dl>
       </section>
     </dialog>

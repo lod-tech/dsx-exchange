@@ -65,7 +65,7 @@ func main() {
 		return sub.Run(ctx)
 	})
 
-	srv := httpapi.New(cfg.HTTPAddr, h)
+	srv := httpapi.New(cfg.HTTPAddr, h, connectionInfo(cfg))
 	go func() {
 		log.Printf("dashboard: serving UI on %s", cfg.HTTPAddr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -80,6 +80,35 @@ func main() {
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("dashboard: http shutdown: %v", err)
+	}
+}
+
+// connectionInfo builds the public wiring info advertised to external systems
+// from the environment-configured public addresses.
+func connectionInfo(cfg *config.Config) httpapi.ConnectionInfo {
+	agent := cfg.FlexAgentID
+	return httpapi.ConnectionInfo{
+		Completion: httpapi.CompletionInfo{
+			BaseURL:   cfg.PublicCompletionURL,
+			Model:     cfg.PublicCompletionModel,
+			Endpoints: []string{"/models", "/chat/completions", "/completions"},
+			Auth:      "none",
+		},
+		Flex: httpapi.FlexInfo{
+			MQTTURL:          cfg.PublicMQTTURL,
+			OAuthTokenURL:    cfg.PublicOAuthTokenURL,
+			ClientID:         cfg.FlexISVClientID,
+			ClientSecret:     cfg.FlexISVClientSecret,
+			Scope:            cfg.FlexISVScope,
+			Grant:            "client_credentials",
+			Username:         "oauthtoken",
+			AgentID:          agent,
+			Feed:             cfg.FlexFeedTag,
+			PublishTopic:     "grid/v1/isv/<isv-id>/loadtarget/set",
+			SubscribeTopics:  []string{"grid/v1/dsx-flex-agent/" + agent + "/powerstate/status", "grid/v1/dsx-flex-agent/" + agent + "/powerbreach"},
+			CloudEventType:   "grid.loadtarget.set.v1",
+			CloudEventSource: "//grid/v1/isv/<isv-id>",
+		},
 	}
 }
 

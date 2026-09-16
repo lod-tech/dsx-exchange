@@ -90,6 +90,91 @@ curl -s http://172.18.200.1/v1/chat/completions \
 
 Or port-forward: `make inference-api`, then use `http://localhost:8081/v1/...`.
 
+## Exposing to external systems (DevOps)
+
+Two external systems connect to this stack: an **EDN system** that sends
+inference load to the completion API, and an **energy system (ISV)** that sends
+power targets and reads power feedback over MQTT. This section lists what to
+expose and how.
+
+### Surfaces and ports
+
+| Surface | In-cluster service | Port | Protocol | Who connects | Expose? |
+| --- | --- | --- | --- | --- | --- |
+| Completion API | `dsx-inference` (`csc-event-bus`) | 80 → 8080 | HTTP (OpenAI) | EDN system | Yes, via gateway/ingress |
+| DSX Flex MQTT | `nats` (`csc-event-bus`) | 1883 | MQTT | Energy system (ISV) | Yes, prefer TLS on 8883 |
+| OAuth2 token | `event-bus` (`idp`) | 5556 | HTTP (`/token`) | Energy system (ISV) | Yes, via gateway/ingress |
+| Dashboard UI | `dsx-dashboard` (`csc-event-bus`) | 80 → 8080 | HTTP + WebSocket (`/ws`) | Operators | Internal only |
+| Event bus | `nats` (`csc-event-bus`) | 4222 | NATS | Internal services | No |
+
+The completion API is already published through the shared gateway
+(`shared-gateway` in `csc-gateway`) at path prefix `/v1` via an `HTTPRoute`, so
+exposing the gateway's address exposes the API.
+
+### What to expose to the internet
+
+1. **Completion API** — terminate TLS at the gateway/ingress and route `/v1` to
+   `dsx-inference`. Give the EDN system the resulting base URL, e.g.
+   `https://<host>/v1`. The mock enforces no auth; add an auth policy at the
+   gateway before exposing it publicly.
+2. **MQTT broker** — expose the NATS MQTT listener. Prefer a TLS listener on
+   `8883` (`tls://<host>:8883`) over plaintext `1883`. Clients authenticate with
+   an OAuth2 access token as the MQTT password (username `oauthtoken`).
+3. **OAuth2 token endpoint** — expose the IdP `/token` endpoint over HTTPS so the
+   ISV can obtain tokens (client credentials grant).
+
+Keep the NATS client port (`4222`), the SYS/monitoring account, and the dashboard
+UI on the internal network. Do not expose them to the internet.
+
+### Provision an ISV client
+
+Grid ISVs authenticate as an OAuth2 client scoped to publish load targets:
+
+1. Add the client to
+   [../idp/secret-generator/credentials.yaml.tmpl](../idp/secret-generator/credentials.yaml.tmpl)
+   (the local stack ships `grid-isv` / `grid-isv-secret`).
+2. Grant `pub` on `grid.v1.isv.>` and `sub` on `grid.v1.dsx-flex-agent.>` in
+   [../event-bus/k8s/csc/values.yaml](../event-bus/k8s/csc/values.yaml), then
+   redeploy. Issue a distinct client per ISV in production.
+
+### Point the dashboard dialog at the public addresses
+
+After exposing the surfaces, set the dashboard's public-wiring values so the
+"Connection info" dialog shows the real addresses (they are display-only; the
+dashboard does not connect with them). Set Helm `connectionInfo.*` on the
+dashboard chart, or the `DASHBOARD_PUBLIC_*` / `DASHBOARD_FLEX_*` environment
+variables — see the dashboard
+[Configuration](../dashboard/README.md#configuration). For example:
+
+```yaml
+# local/dashboard/deploy/values.yaml (override per environment)
+connectionInfo:
+  completionURL: "https://api.example.com/v1"
+  mqttURL: "tls://mqtt.example.com:8883"
+  oauthTokenURL: "https://idp.example.com/token"
+```
+
+### Local access (no public addresses)
+
+Locally there is no internet-facing address, so the defaults map to
+`kubectl port-forward` on `localhost`. Run one forward per surface:
+
+```bash
+make inference-api   # completion API  -> http://localhost:8081/v1
+kubectl --context kind-dsx-exchange -n csc-event-bus port-forward svc/nats 1883:1883
+kubectl --context kind-dsx-exchange -n idp port-forward svc/event-bus 5556:5556
+```
+
+### Security checklist
+
+- Terminate TLS on every exposed surface; prefer MQTT over TLS (`8883`).
+- Require OAuth2 client credentials for MQTT; scope each client to the least
+  subjects it needs.
+- Add an auth policy in front of the completion API before public exposure — the
+  mock is open by design.
+- Rotate the ISV client secret; issue one client per ISV.
+- Keep NATS `4222`, the SYS account, and the dashboard UI off the public network.
+
 ## Configuration
 
 The service reads environment variables (Helm values set these):

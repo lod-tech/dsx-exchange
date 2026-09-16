@@ -15,12 +15,16 @@ A live web dashboard for the local DSX Exchange stack. It shows:
   last set by" card names the ISV that last issued a `grid.loadtarget.set`
   command, the requested cap, the feeds it applies to, and when it arrived.
 
-A "Connection info" button in the top bar opens a dialog with the endpoints and
-local-dev credentials external systems need: the OpenAI-compatible completion API
-(for an EDN system) and the DSX Flex MQTT broker, OAuth2 token URL, ISV
-credentials, and CloudEvents topics (for an energy system). Each value is shown
-for both in-cluster and host (`kubectl port-forward`) access and is click-to-copy.
-The layout is responsive and reflows for narrow viewports.
+A "Connection info" button in the top bar opens a dialog with the **public**
+endpoints and credentials external systems need: the OpenAI-compatible completion
+API (for an EDN system) and the DSX Flex MQTT broker, OAuth2 token URL, ISV
+credentials, and CloudEvents topics (for an energy system). These addresses are
+served from the dashboard's configuration (`DASHBOARD_PUBLIC_*` /
+`DASHBOARD_FLEX_*`, see [Configuration](#configuration)), so operators set them to
+the real externally reachable endpoints once, and the dialog shows a single clean
+address per surface instead of in-cluster DNS. Each value is click-to-copy, and
+the layout is responsive and reflows for narrow viewports. For what to expose and
+how, see the [DevOps runbook](../inference-mock/README.md#exposing-to-external-systems-devops).
 
 It is a local evaluation tool (like `mqtt-client` and `dummy-bms`); it is not
 part of the production charts.
@@ -113,6 +117,26 @@ The backend reads environment variables (Helm values set these):
 | `DASHBOARD_OAUTH_IDP_URL`       | `http://event-bus.idp.svc.cluster.local:5556` | IdP base URL                         |
 | `DASHBOARD_OAUTH_CLIENT_ID`     | `dashboard`                                   | OAuth2 client ID                     |
 | `DASHBOARD_OAUTH_CLIENT_SECRET` | `dashboard-secret`                            | OAuth2 client secret                 |
+
+The "Connection info" dialog is populated from these public-wiring variables.
+Set them to the externally reachable addresses for your deployment (the defaults
+match the documented local port-forwards):
+
+| Variable                          | Default                        | Purpose                                          |
+| --------------------------------- | ------------------------------ | ------------------------------------------------ |
+| `DASHBOARD_PUBLIC_COMPLETION_URL` | `http://localhost:8081/v1`     | Public OpenAI-compatible base URL (EDN)          |
+| `DASHBOARD_PUBLIC_COMPLETION_MODEL` | `dsx-mock-llm`               | Model id served by the completion API            |
+| `DASHBOARD_PUBLIC_MQTT_URL`       | `tcp://localhost:1883`         | Public MQTT broker URL (energy/ISV)              |
+| `DASHBOARD_PUBLIC_OAUTH_TOKEN_URL`| `http://localhost:5556/token`  | Public OAuth2 token endpoint                     |
+| `DASHBOARD_FLEX_ISV_CLIENT_ID`    | `grid-isv`                     | OAuth2 client id an ISV uses to publish targets  |
+| `DASHBOARD_FLEX_ISV_CLIENT_SECRET`| `grid-isv-secret`              | OAuth2 client secret for the ISV client          |
+| `DASHBOARD_FLEX_ISV_SCOPE`        | `mqtt`                         | OAuth2 scope required for MQTT publish           |
+| `DASHBOARD_FLEX_AGENT_ID`         | `maxlps`                       | DSX Flex agent id (drives feedback topic names)  |
+| `DASHBOARD_FLEX_FEED_TAG`         | `ai-factory-main`              | Power feed tag the agent represents              |
+
+These are display-only: the dashboard does not connect with them. In a shared or
+internet-facing deployment, restrict access to the dashboard itself, since the
+dialog surfaces the ISV client secret.
 
 ## Scope and limitations
 

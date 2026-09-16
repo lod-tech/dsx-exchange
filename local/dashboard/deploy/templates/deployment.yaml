@@ -44,6 +44,25 @@ spec:
               value: {{ .Values.oauth.clientSecret | quote }}
             - name: DASHBOARD_OAUTH_SCOPE
               value: {{ .Values.oauth.scope | quote }}
+            # Public wiring advertised to external systems in the UI dialog.
+            - name: DASHBOARD_PUBLIC_COMPLETION_URL
+              value: {{ .Values.connectionInfo.completionURL | quote }}
+            - name: DASHBOARD_PUBLIC_COMPLETION_MODEL
+              value: {{ .Values.connectionInfo.completionModel | quote }}
+            - name: DASHBOARD_PUBLIC_MQTT_URL
+              value: {{ .Values.connectionInfo.mqttURL | quote }}
+            - name: DASHBOARD_PUBLIC_OAUTH_TOKEN_URL
+              value: {{ .Values.connectionInfo.oauthTokenURL | quote }}
+            - name: DASHBOARD_FLEX_ISV_CLIENT_ID
+              value: {{ .Values.connectionInfo.isvClientID | quote }}
+            - name: DASHBOARD_FLEX_ISV_CLIENT_SECRET
+              value: {{ .Values.connectionInfo.isvClientSecret | quote }}
+            - name: DASHBOARD_FLEX_ISV_SCOPE
+              value: {{ .Values.connectionInfo.isvScope | quote }}
+            - name: DASHBOARD_FLEX_AGENT_ID
+              value: {{ .Values.connectionInfo.flexAgentID | quote }}
+            - name: DASHBOARD_FLEX_FEED_TAG
+              value: {{ .Values.connectionInfo.flexFeedTag | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.httpPort }}

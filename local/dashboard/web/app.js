@@ -41,6 +41,8 @@
     connInfoBtn: document.getElementById("conn-info-btn"),
     connDialog: document.getElementById("conn-dialog"),
     connDialogClose: document.getElementById("conn-dialog-close"),
+    connCompletion: document.getElementById("conn-completion"),
+    connFlex: document.getElementById("conn-flex"),
     powerFeed: document.getElementById("power-feed"),
     breachBanner: document.getElementById("breach-banner"),
     pPower: document.getElementById("p-power"),
@@ -99,11 +101,85 @@
         }, function () {});
       }
     });
+    loadConnectionInfo();
   }
 
   function flashCopied(node) {
     node.classList.add("copied");
     setTimeout(function () { node.classList.remove("copied"); }, 900);
+  }
+
+  function loadConnectionInfo() {
+    fetch("/api/connection-info", { headers: { accept: "application/json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (info) { if (info) renderConnectionInfo(info); })
+      .catch(function () {});
+  }
+
+  function ce(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  // codeVal builds a click-to-copy code chip.
+  function codeVal(text) {
+    return ce("code", "copyable", text);
+  }
+
+  // addRow appends a <dt>/<dd> pair. Each value may be a string (rendered as a
+  // copyable code chip) or a DOM node (appended verbatim). An optional note is
+  // appended as muted text.
+  function addRow(dl, label, values, note) {
+    dl.appendChild(ce("dt", null, label));
+    const dd = ce("dd");
+    values.forEach(function (v, i) {
+      if (i > 0) dd.appendChild(document.createTextNode(" "));
+      dd.appendChild(typeof v === "string" ? codeVal(v) : v);
+    });
+    if (note) {
+      const s = ce("span", "conn-note", " " + note);
+      dd.appendChild(s);
+    }
+    dl.appendChild(dd);
+  }
+
+  function renderConnectionInfo(info) {
+    const c = info.completion || {};
+    const f = info.flex || {};
+
+    if (el.connCompletion) {
+      const dl = el.connCompletion;
+      dl.innerHTML = "";
+      const base = c.baseURL || "";
+      addRow(dl, "Base URL", [base || "—"]);
+      const eps = (c.endpoints || []).map(function (e) { return codeVal(base + e); });
+      addRow(dl, "Endpoints", eps.length ? eps : [document.createTextNode("—")]);
+      addRow(dl, "Model", [c.model || "—"]);
+      addRow(dl, "Auth", [document.createTextNode(c.auth === "none" || !c.auth ? "None (open endpoint)" : c.auth)]);
+      if (base) {
+        const example = "curl " + base + "/chat/completions -H 'content-type: application/json' -d '{\"model\":\"" + (c.model || "") + "\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}'";
+        addRow(dl, "Example", [example]);
+      }
+    }
+
+    if (el.connFlex) {
+      const dl = el.connFlex;
+      dl.innerHTML = "";
+      addRow(dl, "MQTT broker", [f.mqttURL || "—"]);
+      addRow(dl, "OAuth2 token URL", [f.oauthTokenURL || "—"]);
+      addRow(dl, "Client ID", [f.clientID || "—"]);
+      if (f.clientSecret) addRow(dl, "Client secret", [f.clientSecret]);
+      addRow(dl, "Scope", [f.scope || "—"], "grant: " + (f.grant || "client_credentials"));
+      addRow(dl, "MQTT username", [f.username || "oauthtoken"], "password = OAuth2 access token");
+      addRow(dl, "Publish topic", [f.publishTopic || "—"], "replace <isv-id> with your ISV identifier");
+      const subs = (f.subscribeTopics || []).map(function (t) { return codeVal(t); });
+      addRow(dl, "Subscribe topics", subs.length ? subs : [document.createTextNode("—")]);
+      addRow(dl, "CloudEvents type", [f.cloudEventType || "—"]);
+      addRow(dl, "CloudEvents source", [f.cloudEventSource || "—"]);
+      addRow(dl, "Feed", [f.feed || "—"]);
+    }
   }
 
   // ---- Rendering ----------------------------------------------------------

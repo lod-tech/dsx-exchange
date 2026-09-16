@@ -32,6 +32,24 @@ oauth:
   clientSecret: "dashboard-secret"
   scope: "mqtt"
 
+# Public wiring shown in the UI "Connection info" dialog. Set these to the
+# externally reachable addresses (gateway/ingress/broker), not in-cluster DNS.
+# Defaults match the documented local port-forwards (see the DevOps runbook in
+# local/inference-mock/README.md).
+connectionInfo:
+  # OpenAI-compatible completion API base URL (for an EDN system).
+  completionURL: "http://localhost:8081/v1"
+  completionModel: "dsx-mock-llm"
+  # DSX Flex MQTT broker + OAuth2 token endpoint (for an energy system / ISV).
+  mqttURL: "tcp://localhost:1883"
+  oauthTokenURL: "http://localhost:5556/token"
+  isvClientID: "grid-isv"
+  isvClientSecret: "grid-isv-secret"
+  isvScope: "mqtt"
+  # DSX Flex agent identity (drives the feedback topic names and feed tag).
+  flexAgentID: "maxlps"
+  flexFeedTag: "ai-factory-main"
+
 resources:
   requests:
     cpu: 25m

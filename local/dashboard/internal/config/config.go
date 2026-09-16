@@ -50,6 +50,20 @@ type Config struct {
 	OAuthClientID     string
 	OAuthClientSecret string
 	OAuthScope        string
+
+	// Public connection info advertised in the "Connection info" dialog. These
+	// are the addresses external systems use to reach the stack, so they must be
+	// set to the public gateway/ingress/broker endpoints (not in-cluster DNS).
+	// Locally they default to the documented port-forward addresses.
+	PublicCompletionURL   string // OpenAI-compatible base URL, e.g. https://api.example.com/v1
+	PublicCompletionModel string // model id served by the completion API
+	PublicMQTTURL         string // MQTT broker URL, e.g. tls://mqtt.example.com:8883
+	PublicOAuthTokenURL   string // OAuth2 token endpoint, e.g. https://idp.example.com/token
+	FlexISVClientID       string // OAuth2 client id an ISV uses to publish targets
+	FlexISVClientSecret   string // OAuth2 client secret for the ISV client
+	FlexISVScope          string // OAuth2 scope required for MQTT publish
+	FlexAgentID           string // DSX Flex agent id (drives feedback topics)
+	FlexFeedTag           string // power feed tag the agent represents
 }
 
 // FromEnv builds a Config from environment variables, applying local defaults.
@@ -68,6 +82,16 @@ func FromEnv() (*Config, error) {
 		OAuthClientID:      env("DASHBOARD_OAUTH_CLIENT_ID", "dashboard"),
 		OAuthClientSecret:  env("DASHBOARD_OAUTH_CLIENT_SECRET", "dashboard-secret"),
 		OAuthScope:         env("DASHBOARD_OAUTH_SCOPE", "mqtt"),
+
+		PublicCompletionURL:   env("DASHBOARD_PUBLIC_COMPLETION_URL", "http://localhost:8081/v1"),
+		PublicCompletionModel: env("DASHBOARD_PUBLIC_COMPLETION_MODEL", "dsx-mock-llm"),
+		PublicMQTTURL:         env("DASHBOARD_PUBLIC_MQTT_URL", "tcp://localhost:1883"),
+		PublicOAuthTokenURL:   env("DASHBOARD_PUBLIC_OAUTH_TOKEN_URL", "http://localhost:5556/token"),
+		FlexISVClientID:       env("DASHBOARD_FLEX_ISV_CLIENT_ID", "grid-isv"),
+		FlexISVClientSecret:   env("DASHBOARD_FLEX_ISV_CLIENT_SECRET", "grid-isv-secret"),
+		FlexISVScope:          env("DASHBOARD_FLEX_ISV_SCOPE", "mqtt"),
+		FlexAgentID:           env("DASHBOARD_FLEX_AGENT_ID", "maxlps"),
+		FlexFeedTag:           env("DASHBOARD_FLEX_FEED_TAG", "ai-factory-main"),
 	}
 
 	if c.EventSubject == "" {
