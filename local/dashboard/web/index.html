@@ -59,13 +59,29 @@ SPDX-License-Identifier: Apache-2.0
         <div class="pstat"><div class="pstat-value" id="p-shed">0</div><div class="pstat-label">Shed / sec</div></div>
         <div class="pstat"><div class="pstat-value" id="p-compliant">&mdash;</div><div class="pstat-label">Compliance</div></div>
       </div>
+      <div class="target-card" id="target-card">
+        <div class="target-label">Power target last set by</div>
+        <div class="target-body" id="target-body">No ISV target received yet &mdash; running at default cap.</div>
+      </div>
       <div class="charts">
         <div class="chart-card">
-          <div class="chart-title">Requests / sec (offered vs served)</div>
+          <div class="chart-head">
+            <div class="chart-title">Requests / sec (offered vs served)</div>
+            <div class="legend">
+              <span class="legend-item"><span class="swatch" style="background:#58a6ff"></span>Offered</span>
+              <span class="legend-item"><span class="swatch" style="background:#76b900"></span>Served</span>
+            </div>
+          </div>
           <canvas id="chart-rps" height="150"></canvas>
         </div>
         <div class="chart-card">
-          <div class="chart-title">Power usage vs target (MW)</div>
+          <div class="chart-head">
+            <div class="chart-title">Power usage vs target (MW)</div>
+            <div class="legend">
+              <span class="legend-item"><span class="swatch" style="background:#76b900"></span>Power</span>
+              <span class="legend-item"><span class="swatch swatch-dashed" style="background:#f85149"></span>Target</span>
+            </div>
+          </div>
           <canvas id="chart-power" height="150"></canvas>
         </div>
       </div>
@@ -75,6 +91,7 @@ SPDX-License-Identifier: Apache-2.0
       <section class="panel">
         <div class="panel-head">
           <h2>Connected clients</h2>
+          <label class="mqtt-filter"><input type="checkbox" id="mqtt-only" /> MQTT only</label>
           <span class="count" id="conn-count">0</span>
         </div>
         <div class="table-wrap">

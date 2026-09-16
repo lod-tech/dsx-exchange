@@ -30,7 +30,7 @@ func (s *Subscriber) dispatchPower(subject string, data []byte) bool {
 		s.handlePowerState(data)
 		return true
 	case strings.HasPrefix(subject, "grid.v1.isv.") && strings.HasSuffix(subject, ".loadtarget.set"):
-		s.handleLoadTarget(data)
+		s.handleLoadTarget(subject, data)
 		return true
 	default:
 		return false
@@ -69,6 +69,7 @@ func (s *Subscriber) handleTelemetry(data []byte) {
 		Compliant:      t.Compliant,
 		BreachStatus:   s.breachStatus,
 		BreachSeverity: s.breachSeverity,
+		LastTarget:     s.lastTarget,
 	}
 	s.havePower = true
 	p := s.lastPower
@@ -77,8 +78,10 @@ func (s *Subscriber) handleTelemetry(data []byte) {
 }
 
 type cloudEvent struct {
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data"`
+	Type   string          `json:"type"`
+	Source string          `json:"source"`
+	Time   string          `json:"time"`
+	Data   json.RawMessage `json:"data"`
 }
 
 type powerValue struct {
@@ -189,7 +192,7 @@ type setLoadData struct {
 	} `json:"targets"`
 }
 
-func (s *Subscriber) handleLoadTarget(data []byte) {
+func (s *Subscriber) handleLoadTarget(subject string, data []byte) {
 	var ev cloudEvent
 	if err := json.Unmarshal(data, &ev); err != nil {
 		return
@@ -198,19 +201,64 @@ func (s *Subscriber) handleLoadTarget(data []byte) {
 	if err := json.Unmarshal(ev.Data, &sl); err != nil {
 		return
 	}
+	isv := isvFromSubject(subject)
+	when := parseEventTime(ev.Time)
 	for _, t := range sl.Targets {
 		feed := "all feeds"
 		if len(t.FeedTags) > 0 {
 			feed = strings.Join(t.FeedTags, ",")
 		}
+		ts := &model.TargetSet{
+			By:      isv,
+			Source:  ev.Source,
+			Cleared: t.LoadConstraint == nil,
+			Feeds:   feed,
+			Time:    when,
+		}
 		var text string
 		if t.LoadConstraint == nil {
-			text = fmt.Sprintf("ISV cleared the power cap on %s", feed)
+			text = fmt.Sprintf("%s cleared the power cap on %s", isv, feed)
 		} else {
-			text = fmt.Sprintf("ISV set power cap to %.1f MW on %s", t.LoadConstraint.megawatts(), feed)
+			ts.ValueMW = t.LoadConstraint.megawatts()
+			text = fmt.Sprintf("%s set power cap to %.1f MW on %s", isv, ts.ValueMW, feed)
 		}
-		s.sink.PushNotice(model.Notice{Kind: "target", Level: "info", Text: text, Time: time.Now().UTC()})
+
+		s.mu.Lock()
+		s.lastTarget = ts
+		if s.havePower {
+			s.lastPower.LastTarget = ts
+		}
+		p := s.lastPower
+		have := s.havePower
+		s.mu.Unlock()
+
+		if have {
+			s.sink.SetPower(p)
+		}
+		s.sink.PushNotice(model.Notice{Kind: "target", Level: "info", Text: text, Time: when})
 	}
+}
+
+// isvFromSubject extracts the ISV identifier from a
+// grid.v1.isv.<isv>.loadtarget.set subject. It falls back to "ISV" when the
+// subject does not match the expected shape.
+func isvFromSubject(subject string) string {
+	parts := strings.Split(subject, ".")
+	if len(parts) >= 4 && parts[0] == "grid" && parts[2] == "isv" {
+		return parts[3]
+	}
+	return "ISV"
+}
+
+// parseEventTime parses the CloudEvents time, defaulting to now when absent or
+// malformed.
+func parseEventTime(v string) time.Time {
+	if v != "" {
+		if t, err := time.Parse(time.RFC3339Nano, v); err == nil {
+			return t.UTC()
+		}
+	}
+	return time.Now().UTC()
 }
 
 func label(event string) string {

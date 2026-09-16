@@ -104,6 +104,39 @@ func TestHandleLoadTargetEmitsNotice(t *testing.T) {
 	}
 }
 
+func TestHandleLoadTargetRecordsSetter(t *testing.T) {
+	sink := &fakeSink{}
+	s := &Subscriber{sink: sink, opts: Options{DropInbox: true, MaxPayloadBytes: 4096}}
+	// Seed a power snapshot so the target attribution merges into it and emits.
+	s.handle(&nats.Msg{Subject: "dsx.inference.v1.telemetry", Data: []byte(`{"power_mw":8,"effective_cap_mw":96,"compliant":true}`)})
+	ce := `{"type":"grid.loadtarget.set.v1","source":"//grid/v1/isv/acme-energy","time":"2026-09-16T20:21:12Z","data":{"targets":[{"feed_tags":["ai-factory-main"],"load_constraint":{"value":40,"unit":"megawatt"}}]}}`
+	s.handle(&nats.Msg{Subject: "grid.v1.isv.acme-energy.loadtarget.set", Data: []byte(ce)})
+
+	last := sink.powers[len(sink.powers)-1]
+	if last.LastTarget == nil {
+		t.Fatalf("expected LastTarget on power snapshot, got nil")
+	}
+	if last.LastTarget.By != "acme-energy" {
+		t.Errorf("LastTarget.By = %q, want acme-energy", last.LastTarget.By)
+	}
+	if last.LastTarget.ValueMW != 40 || last.LastTarget.Cleared {
+		t.Errorf("LastTarget value = %+v, want 40 MW not cleared", last.LastTarget)
+	}
+	if last.LastTarget.Feeds != "ai-factory-main" {
+		t.Errorf("LastTarget.Feeds = %q", last.LastTarget.Feeds)
+	}
+	if last.LastTarget.Source != "//grid/v1/isv/acme-energy" {
+		t.Errorf("LastTarget.Source = %q", last.LastTarget.Source)
+	}
+
+	// A subsequent telemetry snapshot should retain the setter attribution.
+	s.handle(&nats.Msg{Subject: "dsx.inference.v1.telemetry", Data: []byte(`{"power_mw":40,"effective_cap_mw":40,"target_active":true,"compliant":true}`)})
+	latest := sink.powers[len(sink.powers)-1]
+	if latest.LastTarget == nil || latest.LastTarget.By != "acme-energy" {
+		t.Errorf("setter attribution not retained on later telemetry: %+v", latest.LastTarget)
+	}
+}
+
 func TestHandleBreachUpdatesPowerAndNotice(t *testing.T) {
 	sink := &fakeSink{}
 	s := &Subscriber{sink: sink, opts: Options{DropInbox: true, MaxPayloadBytes: 4096}}

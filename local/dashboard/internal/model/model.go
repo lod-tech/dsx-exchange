@@ -82,6 +82,20 @@ type Power struct {
 	Compliant      bool      `json:"compliant"`
 	BreachStatus   string    `json:"breachStatus,omitempty"`
 	BreachSeverity string    `json:"breachSeverity,omitempty"`
+	// LastTarget records the most recent ISV load-target command observed on the
+	// bus, so the dashboard can show who last controlled power usage.
+	LastTarget *TargetSet `json:"lastTarget,omitempty"`
+}
+
+// TargetSet describes a single grid.loadtarget.set command: which ISV issued it,
+// the requested cap, the feeds it applies to, and when it was received.
+type TargetSet struct {
+	By      string    `json:"by"`      // ISV identifier (from subject / CloudEvents source)
+	Source  string    `json:"source"`  // full CloudEvents source URI
+	ValueMW float64   `json:"valueMw"` // requested cap in MW (0 when cleared)
+	Cleared bool      `json:"cleared"` // true when the ISV removed the constraint
+	Feeds   string    `json:"feeds"`   // feed tags the target applies to
+	Time    time.Time `json:"time"`
 }
 
 // Notice is an activity-feed note for DSX Flex control-plane events (load target

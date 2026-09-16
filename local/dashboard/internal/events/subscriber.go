@@ -53,6 +53,7 @@ type Subscriber struct {
 	havePower      bool
 	breachStatus   string
 	breachSeverity string
+	lastTarget     *model.TargetSet
 }
 
 // Connect obtains an OAuth2 token source and dials NATS on the CSC account.

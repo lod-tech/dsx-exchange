@@ -11,6 +11,7 @@
   const state = {
     connections: [],
     filter: "",
+    mqttOnly: false,
     paused: false,
     // Power history series.
     hist: {
@@ -31,6 +32,7 @@
     statTotal: document.getElementById("stat-total"),
     connBody: document.getElementById("conn-body"),
     connCount: document.getElementById("conn-count"),
+    mqttOnly: document.getElementById("mqtt-only"),
     activity: document.getElementById("activity-log"),
     feed: document.getElementById("event-feed"),
     filter: document.getElementById("filter"),
@@ -44,6 +46,7 @@
     pInflight: document.getElementById("p-inflight"),
     pShed: document.getElementById("p-shed"),
     pCompliant: document.getElementById("p-compliant"),
+    targetBody: document.getElementById("target-body"),
     chartRps: document.getElementById("chart-rps"),
     chartPower: document.getElementById("chart-power"),
   };
@@ -60,6 +63,10 @@
   el.clearBtn.addEventListener("click", function () {
     el.feed.innerHTML = "";
   });
+  el.mqttOnly.addEventListener("change", function () {
+    state.mqttOnly = el.mqttOnly.checked;
+    renderConnections(state.connections);
+  });
 
   // ---- Rendering ----------------------------------------------------------
   function setDot(node, up) {
@@ -73,20 +80,31 @@
     return (n / 1024 / 1024).toFixed(1) + " MB";
   }
 
+  function isMqtt(c) {
+    return String(c.type || "").toLowerCase() === "mqtt";
+  }
+
   function renderConnections(conns) {
     state.connections = conns;
-    el.connCount.textContent = conns.length;
-    if (!conns.length) {
-      el.connBody.innerHTML = '<tr class="empty"><td colspan="8">No active connections</td></tr>';
+    const shown = state.mqttOnly ? conns.filter(isMqtt) : conns;
+    el.connCount.textContent = state.mqttOnly
+      ? shown.length + " / " + conns.length
+      : conns.length;
+    if (!shown.length) {
+      const msg = state.mqttOnly ? "No MQTT clients connected" : "No active connections";
+      el.connBody.innerHTML = '<tr class="empty"><td colspan="8">' + msg + "</td></tr>";
       return;
     }
-    const rows = conns.map(function (c) {
+    const rows = shown.map(function (c) {
       const addr = c.ip ? c.ip + ":" + c.port : "-";
+      const transport = (c.type || "nats").toLowerCase();
+      const kind = esc(c.kind || "-") +
+        " <span class=\"transport transport-" + esc(transport) + "\">" + esc(transport) + "</span>";
       return (
         "<tr>" +
         "<td><span class=\"badge\">" + esc(c.account || "-") + "</span></td>" +
         "<td>" + esc(c.name || "-") + "</td>" +
-        "<td>" + esc(c.kind || "-") + "</td>" +
+        "<td>" + kind + "</td>" +
         "<td>" + esc(addr) + "</td>" +
         "<td>" + c.subscriptions + "</td>" +
         "<td>" + c.inMsgs + "</td>" +
@@ -191,8 +209,26 @@
     el.pCompliant.textContent = p.compliant ? "OK" : "OVER";
     el.pCompliant.className = "pstat-value " + (p.compliant ? "ok" : "over");
 
+    renderTargetCard(p.lastTarget);
     renderBreach(p.breachStatus, p.breachSeverity);
     drawCharts();
+  }
+
+  function renderTargetCard(t) {
+    if (!t) {
+      el.targetBody.innerHTML =
+        "No ISV target received yet \u2014 running at default cap.";
+      return;
+    }
+    const when = new Date(t.time).toLocaleTimeString();
+    const value = t.cleared
+      ? "<span class=\"target-value cleared\">cap cleared</span>"
+      : "<span class=\"target-value\">" + (t.valueMw || 0).toFixed(1) + " MW</span>";
+    el.targetBody.innerHTML =
+      "<span class=\"badge\">" + esc(t.by || "ISV") + "</span> " +
+      value +
+      " <span class=\"target-feed\">on " + esc(t.feeds || "all feeds") + "</span>" +
+      " <span class=\"ev-time\">" + esc(when) + "</span>";
   }
 
   function renderBreach(status, severity) {

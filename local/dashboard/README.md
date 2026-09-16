@@ -2,14 +2,18 @@
 
 A live web dashboard for the local DSX Exchange stack. It shows:
 
-- Connected clients live (per-connection: account, name, address, subscriptions,
-  message counters, uptime) with connect/disconnect activity.
+- Connected clients live (per-connection: account, name, transport, address,
+  subscriptions, message counters, uptime) with connect/disconnect activity. A
+  "MQTT only" toggle filters the table to MQTT transports, and each row shows a
+  transport badge (NATS, MQTT, or WS).
 - A live feed of events observed on the CSC account, with a subject/payload
   filter and an events-per-second meter.
 - An "AI Factory Power" section: live requests per second, power usage versus the
-  DSX Flex power target, compliance, shed rate, breach alerts, and history charts,
-  driven by the mock inference service (see
-  [../inference-mock/README.md](../inference-mock/README.md)).
+  DSX Flex power target, compliance, shed rate, breach alerts, and history charts
+  (with legends), driven by the mock inference service (see
+  [../inference-mock/README.md](../inference-mock/README.md)). A "Power target
+  last set by" card names the ISV that last issued a `grid.loadtarget.set`
+  command, the requested cap, the feeds it applies to, and when it arrived.
 
 It is a local evaluation tool (like `mqtt-client` and `dummy-bms`); it is not
 part of the production charts.
