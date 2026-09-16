@@ -1,0 +1,12 @@
+# Copyright 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: dsx-dashboard
+description: |
+  DSX Live Dashboard for local verification. Shows live client connections via
+  the NATS system account and streams observed events from the CSC account to a
+  web UI. Local fixture chart only.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,41 @@
+# Copyright 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+image:
+  repository: dsx-exchange/dsx-dashboard
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+# HTTP port the dashboard listens on inside the container.
+httpPort: 8080
+
+# NATS endpoint (in-namespace service).
+natsURL: "nats://nats:4222"
+
+# Subject the CSC event subscriber listens on. ">" observes all account traffic.
+eventSubject: ">"
+
+# Drop _INBOX.> reply traffic from the event feed.
+dropInboxEvents: true
+
+# SYS-account NKey seed secret (reused from the surveyor identity).
+sysNKey:
+  secretName: nats-surveyor
+  seedKey: seed
+
+# OAuth2 client credentials for the authorized CSC event subscription.
+oauth:
+  idpURL: "http://event-bus.idp.svc.cluster.local:5556"
+  clientID: "dashboard"
+  clientSecret: "dashboard-secret"
+  scope: "mqtt"
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi

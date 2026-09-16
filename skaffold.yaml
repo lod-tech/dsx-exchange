@@ -12,3 +12,6 @@ requires:
 - path: local/agent-gateway/skaffold.yaml
   configs:
   - agent-gateway
+- path: local/dashboard/skaffold.yaml
+  configs:
+  - dashboard

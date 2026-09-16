@@ -72,6 +72,24 @@ global:
                 allow: ["launchlayer.>", "$JS.API.>", "$KV.>", "$OBJ.>", "$O.>", "$JS.ACK.>"]
               sub:
                 allow: ["launchlayer.>", "_INBOX.>"]
+          # DSX Live Dashboard: read-only observer of all CSC-account traffic.
+          dashboard:
+            azp: "dashboard"
+            account: "CSC"
+            permissions:
+              pub:
+                allow: ["_INBOX.>"]
+              sub:
+                allow: [">"]
+          # Sample external application for the dashboard demo publisher.
+          demo-app:
+            azp: "demo-app"
+            account: "CSC"
+            permissions:
+              pub:
+                allow: ["demo.>", "test.>"]
+              sub:
+                allow: ["demo.>", "_INBOX.>"]
         mtls:
           mqtt-client:
             identity: "CN=mqtt-client.csc"

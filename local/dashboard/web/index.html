@@ -1,0 +1,97 @@
+<!--
+Copyright 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DSX Live Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">DSX</span>
+        <span class="title">Live Dashboard</span>
+        <span class="site">CSC</span>
+      </div>
+      <div class="status">
+        <span id="ws-dot" class="dot" title="Dashboard stream"></span>
+        <span class="status-label">stream</span>
+        <span id="sys-dot" class="dot" title="SYS monitor (connections)"></span>
+        <span class="status-label">connections</span>
+        <span id="events-dot" class="dot" title="Event subscriber"></span>
+        <span class="status-label">events</span>
+      </div>
+    </header>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-value" id="stat-clients">0</div>
+        <div class="stat-label">Client connections</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-conns">0</div>
+        <div class="stat-label">Total connections</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-rate">0</div>
+        <div class="stat-label">Events / sec</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-label">Events observed</div>
+      </div>
+    </section>
+
+    <main class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Connected clients</h2>
+          <span class="count" id="conn-count">0</span>
+        </div>
+        <div class="table-wrap">
+          <table id="conn-table">
+            <thead>
+              <tr>
+                <th>Account</th>
+                <th>Name</th>
+                <th>Kind</th>
+                <th>Address</th>
+                <th>Subs</th>
+                <th>In</th>
+                <th>Out</th>
+                <th>Uptime</th>
+              </tr>
+            </thead>
+            <tbody id="conn-body">
+              <tr class="empty"><td colspan="8">Waiting for connections…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="activity">
+          <h3>Activity</h3>
+          <ul id="activity-log"></ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Live events</h2>
+          <div class="controls">
+            <input id="filter" type="text" placeholder="filter subject or payload…" />
+            <button id="pause-btn" type="button">Pause</button>
+            <button id="clear-btn" type="button">Clear</button>
+          </div>
+        </div>
+        <div class="feed-wrap">
+          <ul id="event-feed"></ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

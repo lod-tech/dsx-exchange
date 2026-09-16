@@ -129,8 +129,18 @@ For the testing strategy (functional and performance coverage), see
 - `make skaffold-dev`: run Skaffold dev for the complete local stack.
 - `make perf-benchmark`: run the sustained Agent Gateway k6 profile.
 - `make dummy-bms`: publish looping dummy BMS data.
+- `make dashboard-ui`: port-forward the DSX Live Dashboard to `http://localhost:8080`.
+- `make dashboard-demo`: publish sample OAuth2-authorized events for the dashboard.
 - `make clean`: delete the Kind cluster and generated local artifacts.
 - `make help`: show all available targets.
+
+### Live Dashboard
+
+The local stack deploys the DSX Live Dashboard in `csc-event-bus`. It shows live
+client connections (via the NATS system account) and a live event feed from the
+CSC account. Open it with `make dashboard-ui`; see
+[dashboard/README.md](dashboard/README.md) for the end-to-end demo and how to
+connect your own OAuth2 application.
 
 ## Development
 
