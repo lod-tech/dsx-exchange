@@ -15,6 +15,13 @@ A live web dashboard for the local DSX Exchange stack. It shows:
   last set by" card names the ISV that last issued a `grid.loadtarget.set`
   command, the requested cap, the feeds it applies to, and when it arrived.
 
+A "Connection info" button in the top bar opens a dialog with the endpoints and
+local-dev credentials external systems need: the OpenAI-compatible completion API
+(for an EDN system) and the DSX Flex MQTT broker, OAuth2 token URL, ISV
+credentials, and CloudEvents topics (for an energy system). Each value is shown
+for both in-cluster and host (`kubectl port-forward`) access and is click-to-copy.
+The layout is responsive and reflows for narrow viewports.
+
 It is a local evaluation tool (like `mqtt-client` and `dummy-bms`); it is not
 part of the production charts.
 
@@ -96,16 +103,16 @@ Any MQTT client can publish using the OAuth2 path:
 
 The backend reads environment variables (Helm values set these):
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `DASHBOARD_HTTP_ADDR` | `:8080` | UI/WebSocket listen address |
-| `DASHBOARD_NATS_URL` | `nats://nats:4222` | NATS endpoint |
-| `DASHBOARD_SYS_NKEY_SEED_FILE` | `/etc/dsx-dashboard/sys/seed` | SYS-account NKey seed |
-| `DASHBOARD_EVENT_SUBJECT` | `>` | Subject the event feed subscribes to |
-| `DASHBOARD_DROP_INBOX_EVENTS` | `true` | Drop `_INBOX.>` reply noise |
-| `DASHBOARD_OAUTH_IDP_URL` | `http://event-bus.idp.svc.cluster.local:5556` | IdP base URL |
-| `DASHBOARD_OAUTH_CLIENT_ID` | `dashboard` | OAuth2 client ID |
-| `DASHBOARD_OAUTH_CLIENT_SECRET` | `dashboard-secret` | OAuth2 client secret |
+| Variable                        | Default                                       | Purpose                              |
+| ------------------------------- | --------------------------------------------- | ------------------------------------ |
+| `DASHBOARD_HTTP_ADDR`           | `:8080`                                       | UI/WebSocket listen address          |
+| `DASHBOARD_NATS_URL`            | `nats://nats:4222`                            | NATS endpoint                        |
+| `DASHBOARD_SYS_NKEY_SEED_FILE`  | `/etc/dsx-dashboard/sys/seed`                 | SYS-account NKey seed                |
+| `DASHBOARD_EVENT_SUBJECT`       | `>`                                           | Subject the event feed subscribes to |
+| `DASHBOARD_DROP_INBOX_EVENTS`   | `true`                                        | Drop `_INBOX.>` reply noise          |
+| `DASHBOARD_OAUTH_IDP_URL`       | `http://event-bus.idp.svc.cluster.local:5556` | IdP base URL                         |
+| `DASHBOARD_OAUTH_CLIENT_ID`     | `dashboard`                                   | OAuth2 client ID                     |
+| `DASHBOARD_OAUTH_CLIENT_SECRET` | `dashboard-secret`                            | OAuth2 client secret                 |
 
 ## Scope and limitations
 

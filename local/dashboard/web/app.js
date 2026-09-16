@@ -38,12 +38,16 @@
     filter: document.getElementById("filter"),
     pauseBtn: document.getElementById("pause-btn"),
     clearBtn: document.getElementById("clear-btn"),
+    connInfoBtn: document.getElementById("conn-info-btn"),
+    connDialog: document.getElementById("conn-dialog"),
+    connDialogClose: document.getElementById("conn-dialog-close"),
     powerFeed: document.getElementById("power-feed"),
     breachBanner: document.getElementById("breach-banner"),
     pPower: document.getElementById("p-power"),
     pTarget: document.getElementById("p-target"),
     pRps: document.getElementById("p-rps"),
     pInflight: document.getElementById("p-inflight"),
+    pInflightLabel: document.getElementById("p-inflight-label"),
     pShed: document.getElementById("p-shed"),
     pCompliant: document.getElementById("p-compliant"),
     targetBody: document.getElementById("target-body"),
@@ -67,6 +71,40 @@
     state.mqttOnly = el.mqttOnly.checked;
     renderConnections(state.connections);
   });
+
+  // ---- Connection info dialog --------------------------------------------
+  if (el.connInfoBtn && el.connDialog) {
+    el.connInfoBtn.addEventListener("click", function () {
+      if (typeof el.connDialog.showModal === "function") {
+        el.connDialog.showModal();
+      } else {
+        el.connDialog.setAttribute("open", "");
+      }
+    });
+    el.connDialogClose.addEventListener("click", function () {
+      el.connDialog.close();
+    });
+    // Close when clicking the backdrop (outside the dialog content box).
+    el.connDialog.addEventListener("click", function (e) {
+      if (e.target === el.connDialog) el.connDialog.close();
+    });
+    // Click-to-copy for any code value marked copyable.
+    el.connDialog.addEventListener("click", function (e) {
+      const code = e.target.closest(".copyable");
+      if (!code) return;
+      const text = code.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          flashCopied(code);
+        }, function () {});
+      }
+    });
+  }
+
+  function flashCopied(node) {
+    node.classList.add("copied");
+    setTimeout(function () { node.classList.remove("copied"); }, 900);
+  }
 
   // ---- Rendering ----------------------------------------------------------
   function setDot(node, up) {
@@ -201,10 +239,13 @@
     pushPoint(state.hist.power, p.powerMw || 0);
     pushPoint(state.hist.target, typeof p.targetMw === "number" ? p.targetMw : null);
 
-    el.pPower.textContent = (p.powerMw || 0).toFixed(1);
-    el.pTarget.textContent = (p.targetMw || 0).toFixed(1) + (p.targetActive ? "" : " (default)");
+    el.pPower.textContent = fmtMW(p.powerMw || 0);
+    el.pTarget.textContent = fmtMW(p.targetMw || 0) + (p.targetActive ? "" : " (default)");
     el.pRps.textContent = (p.rps || 0).toFixed(1);
     el.pInflight.textContent = p.inFlight || 0;
+    el.pInflightLabel.textContent = p.perRequestMw
+      ? "In-flight (" + fmtRate(p.perRequestMw) + " MW each)"
+      : "In-flight requests";
     el.pShed.textContent = (p.shedPerSec || 0).toFixed(1);
     el.pCompliant.textContent = p.compliant ? "OK" : "OVER";
     el.pCompliant.className = "pstat-value " + (p.compliant ? "ok" : "over");
@@ -223,7 +264,7 @@
     const when = new Date(t.time).toLocaleTimeString();
     const value = t.cleared
       ? "<span class=\"target-value cleared\">cap cleared</span>"
-      : "<span class=\"target-value\">" + (t.valueMw || 0).toFixed(1) + " MW</span>";
+      : "<span class=\"target-value\">" + fmtMW(t.valueMw || 0) + " MW</span>";
     el.targetBody.innerHTML =
       "<span class=\"badge\">" + esc(t.by || "ISV") + "</span> " +
       value +
@@ -318,14 +359,18 @@
       { values: state.hist.rps, color: "#58a6ff", width: 2 },
       { values: state.hist.accepted, color: "#76b900", width: 2 },
     ], 5, "");
+    // Small y-floor so sub-MW loads (from small per-request rates) auto-scale
+    // instead of being pinned near zero under a fixed 5 MW hint.
     drawChart(el.chartPower, [
       { values: state.hist.power, color: "#76b900", width: 2 },
       { values: state.hist.target, color: "#f85149", width: 2, dashed: true },
-    ], 5, "MW");
+    ], 0.01, "MW");
   }
 
+  // niceMax rounds an axis maximum up to a clean 1/2/5 * 10^n value. It works
+  // for sub-unit values too (e.g. 0.05), which matters for small power scales.
   function niceMax(v) {
-    if (v <= 1) return 1;
+    if (v <= 0) return 1;
     const pow = Math.pow(10, Math.floor(Math.log10(v)));
     const n = v / pow;
     let step = 1;
@@ -334,9 +379,22 @@
   }
 
   function fmtNum(v) {
-    if (v >= 100) return v.toFixed(0);
     if (v >= 10) return v.toFixed(0);
-    return v.toFixed(1);
+    if (v >= 1) return v.toFixed(1);
+    if (v > 0) return String(Number(v.toFixed(3)));
+    return "0";
+  }
+
+  // fmtRate renders the per-request power rate without trailing zeros
+  // (e.g. 0.001, 0.5, 1).
+  function fmtRate(v) {
+    return String(Number(v.toFixed(6)));
+  }
+
+  // fmtMW renders a power value in MW with scale-appropriate precision so
+  // sub-MW loads (from small per-request rates) stay legible.
+  function fmtMW(v) {
+    return fmtNum(v);
   }
 
   function addNotice(n) {

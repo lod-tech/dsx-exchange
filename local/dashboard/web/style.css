@@ -32,10 +32,24 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   padding: 10px 18px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
+.topbar-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.conn-btn {
+  background: var(--accent);
+  color: #000;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.conn-btn:hover { background: #8ad000; }
 
 .brand { display: flex; align-items: center; gap: 10px; }
 .logo {
@@ -67,7 +81,7 @@ html, body {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
   padding: 14px 18px;
 }
@@ -192,7 +206,7 @@ tr.empty td { color: var(--muted); text-align: center; padding: 24px; }
 
 .power-stats {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   padding: 12px 14px;
 }
@@ -280,8 +294,20 @@ tr.empty td { color: var(--muted); text-align: center; padding: 24px; }
 .transport-ws { color: var(--blue); border-color: var(--blue); }
 
 @media (max-width: 900px) {
-  .power-stats { grid-template-columns: repeat(3, 1fr); }
   .charts { grid-template-columns: 1fr; }
+  .grid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .table-wrap { max-height: 40vh; }
+  .feed-wrap { max-height: 50vh; }
+}
+@media (max-width: 600px) {
+  .topbar { padding: 8px 12px; }
+  .stats, .power-stats { padding-left: 12px; padding-right: 12px; }
+  .grid { padding: 0 12px 12px; }
+  .power-section { margin: 0 12px 12px; }
+  .conn-btn { padding: 5px 10px; font-size: 12px; }
 }
 
 .feed-wrap { overflow: auto; flex: 1; min-height: 0; }
@@ -301,4 +327,74 @@ tr.empty td { color: var(--muted); text-align: center; padding: 24px; }
   white-space: pre-wrap;
   word-break: break-all;
   opacity: 0.9;
+}
+
+/* Connection info dialog */
+.conn-dialog {
+  width: min(760px, 92vw);
+  max-height: 88vh;
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+}
+.conn-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.conn-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+}
+.conn-dialog-head h2 { margin: 0; font-size: 16px; }
+.conn-dialog-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.conn-dialog-close:hover { color: var(--text); }
+.conn-hint { color: var(--muted); font-size: 12px; padding: 12px 18px 0; margin: 0; }
+.conn-section { padding: 14px 18px; border-top: 1px solid var(--border); }
+.conn-section:first-of-type { border-top: none; }
+.conn-section h3 { margin: 0 0 4px; font-size: 14px; color: var(--accent); }
+.conn-sub { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+.conn-grid {
+  display: grid;
+  grid-template-columns: minmax(150px, max-content) 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+.conn-grid dt { color: var(--muted); font-size: 12px; padding-top: 3px; }
+.conn-grid dd { margin: 0; font-size: 12px; word-break: break-word; }
+.conn-note { color: var(--muted); font-size: 11px; }
+.conn-grid code, .conn-hint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  display: inline-block;
+  margin: 1px 0;
+}
+.conn-grid code.copyable { cursor: pointer; }
+.conn-grid code.copyable:hover { border-color: var(--accent-dim); }
+.conn-grid code.copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.conn-grid code.copied::after { content: " copied"; color: var(--accent); font-size: 10px; }
+
+@media (max-width: 600px) {
+  .conn-grid { grid-template-columns: 1fr; gap: 2px 0; }
+  .conn-grid dt { padding-top: 8px; }
 }
