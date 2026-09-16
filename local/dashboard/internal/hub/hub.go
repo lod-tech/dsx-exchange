@@ -45,7 +45,11 @@ type Hub struct {
 	sysConnected  bool
 	eventConnHere bool
 	seq           uint64
+	lastPower     *model.Power
+	recentNotices []model.Notice
 }
+
+const maxRecentNotices = 40
 
 type client struct {
 	conn *websocket.Conn
@@ -147,6 +151,27 @@ func (h *Hub) PushLifecycle(e model.LifecycleEvent) {
 	h.broadcast(model.Envelope{Type: "lifecycle", Lifecycle: &le})
 }
 
+// SetPower stores the latest power snapshot and broadcasts it to browsers.
+func (h *Hub) SetPower(p model.Power) {
+	pc := p
+	h.mu.Lock()
+	h.lastPower = &pc
+	h.mu.Unlock()
+	h.broadcast(model.Envelope{Type: "power", Power: &pc})
+}
+
+// PushNotice broadcasts a control-plane notice and retains it for new clients.
+func (h *Hub) PushNotice(n model.Notice) {
+	nc := n
+	h.mu.Lock()
+	h.recentNotices = append(h.recentNotices, nc)
+	if len(h.recentNotices) > maxRecentNotices {
+		h.recentNotices = h.recentNotices[len(h.recentNotices)-maxRecentNotices:]
+	}
+	h.mu.Unlock()
+	h.broadcast(model.Envelope{Type: "notice", Notice: &nc})
+}
+
 // SetSysConnected records the SYS monitor connection state.
 func (h *Hub) SetSysConnected(v bool) {
 	h.mu.Lock()
@@ -225,11 +250,20 @@ func (h *Hub) snapshotEnvelopes() []model.Envelope {
 	events := make([]model.Event, len(h.recentEvents))
 	copy(events, h.recentEvents)
 	s := h.buildStatsLocked()
-	return []model.Envelope{
+	envs := []model.Envelope{
 		{Type: "connections", Connections: conns},
 		{Type: "events", Events: events},
 		{Type: "stats", Stats: &s},
 	}
+	if h.lastPower != nil {
+		p := *h.lastPower
+		envs = append(envs, model.Envelope{Type: "power", Power: &p})
+	}
+	for i := range h.recentNotices {
+		n := h.recentNotices[i]
+		envs = append(envs, model.Envelope{Type: "notice", Notice: &n})
+	}
+	return envs
 }
 
 func (h *Hub) broadcast(env model.Envelope) {

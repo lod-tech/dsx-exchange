@@ -6,6 +6,10 @@ A live web dashboard for the local DSX Exchange stack. It shows:
   message counters, uptime) with connect/disconnect activity.
 - A live feed of events observed on the CSC account, with a subject/payload
   filter and an events-per-second meter.
+- An "AI Factory Power" section: live requests per second, power usage versus the
+  DSX Flex power target, compliance, shed rate, breach alerts, and history charts,
+  driven by the mock inference service (see
+  [../inference-mock/README.md](../inference-mock/README.md)).
 
 It is a local evaluation tool (like `mqtt-client` and `dummy-bms`); it is not
 part of the production charts.

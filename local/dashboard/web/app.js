@@ -6,11 +6,19 @@
 
   const MAX_FEED = 400;
   const MAX_ACTIVITY = 60;
+  const MAX_POINTS = 120; // ~2 minutes at 1 Hz
 
   const state = {
     connections: [],
     filter: "",
     paused: false,
+    // Power history series.
+    hist: {
+      rps: [],
+      accepted: [],
+      power: [],
+      target: [],
+    },
   };
 
   const el = {
@@ -28,6 +36,16 @@
     filter: document.getElementById("filter"),
     pauseBtn: document.getElementById("pause-btn"),
     clearBtn: document.getElementById("clear-btn"),
+    powerFeed: document.getElementById("power-feed"),
+    breachBanner: document.getElementById("breach-banner"),
+    pPower: document.getElementById("p-power"),
+    pTarget: document.getElementById("p-target"),
+    pRps: document.getElementById("p-rps"),
+    pInflight: document.getElementById("p-inflight"),
+    pShed: document.getElementById("p-shed"),
+    pCompliant: document.getElementById("p-compliant"),
+    chartRps: document.getElementById("chart-rps"),
+    chartPower: document.getElementById("chart-power"),
   };
 
   // ---- Controls -----------------------------------------------------------
@@ -152,6 +170,154 @@
       .replace(/"/g, "&quot;");
   }
 
+  // ---- Power (AI factory) -------------------------------------------------
+  function pushPoint(arr, v) {
+    arr.push(v);
+    if (arr.length > MAX_POINTS) arr.shift();
+  }
+
+  function renderPower(p) {
+    if (p.feedTag) el.powerFeed.textContent = p.feedTag;
+    pushPoint(state.hist.rps, p.rps || 0);
+    pushPoint(state.hist.accepted, p.acceptedPerSec || 0);
+    pushPoint(state.hist.power, p.powerMw || 0);
+    pushPoint(state.hist.target, typeof p.targetMw === "number" ? p.targetMw : null);
+
+    el.pPower.textContent = (p.powerMw || 0).toFixed(1);
+    el.pTarget.textContent = (p.targetMw || 0).toFixed(1) + (p.targetActive ? "" : " (default)");
+    el.pRps.textContent = (p.rps || 0).toFixed(1);
+    el.pInflight.textContent = p.inFlight || 0;
+    el.pShed.textContent = (p.shedPerSec || 0).toFixed(1);
+    el.pCompliant.textContent = p.compliant ? "OK" : "OVER";
+    el.pCompliant.className = "pstat-value " + (p.compliant ? "ok" : "over");
+
+    renderBreach(p.breachStatus, p.breachSeverity);
+    drawCharts();
+  }
+
+  function renderBreach(status, severity) {
+    if (!status) {
+      el.breachBanner.classList.add("hidden");
+      el.breachBanner.className = "breach-banner hidden";
+      return;
+    }
+    el.breachBanner.className = "breach-banner " + (severity === "critical" ? "critical" : "warning");
+    el.breachBanner.textContent = "\u26A0 Power breach " + status + " (" + (severity || "warning") + ")";
+  }
+
+  function sizeCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    // Use the CSS-rendered size (fixed height in style.css) as the source of
+    // truth so the backing store never compounds across redraws.
+    const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+    const h = canvas.clientHeight || 150;
+    if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+    }
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  // drawChart renders one or more line series on a canvas with a shared y-axis.
+  function drawChart(canvas, lines, yMaxHint, unit) {
+    const dim = sizeCanvas(canvas);
+    const ctx = dim.ctx;
+    const w = dim.w;
+    const h = dim.h;
+    const padL = 42, padR = 8, padT = 10, padB = 16;
+    ctx.clearRect(0, 0, w, h);
+
+    let yMax = yMaxHint || 1;
+    lines.forEach(function (ln) {
+      ln.values.forEach(function (v) {
+        if (v != null && v > yMax) yMax = v;
+      });
+    });
+    yMax = niceMax(yMax);
+
+    const plotW = w - padL - padR;
+    const plotH = h - padT - padB;
+    const n = MAX_POINTS;
+    const xAt = function (i) { return padL + (plotW * i) / (n - 1); };
+    const yAt = function (v) { return padT + plotH - (plotH * v) / yMax; };
+
+    // Grid + y labels.
+    ctx.strokeStyle = "#2b3340";
+    ctx.fillStyle = "#8b949e";
+    ctx.font = "10px -apple-system, sans-serif";
+    ctx.lineWidth = 1;
+    for (let g = 0; g <= 2; g++) {
+      const val = (yMax * g) / 2;
+      const y = yAt(val);
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(w - padR, y);
+      ctx.stroke();
+      ctx.fillText(fmtNum(val) + (unit ? " " + unit : ""), 4, y + 3);
+    }
+
+    lines.forEach(function (ln) {
+      const vals = ln.values;
+      const offset = n - vals.length;
+      ctx.strokeStyle = ln.color;
+      ctx.lineWidth = ln.width || 2;
+      if (ln.dashed) ctx.setLineDash([5, 4]); else ctx.setLineDash([]);
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < vals.length; i++) {
+        if (vals[i] == null) { started = false; continue; }
+        const x = xAt(offset + i);
+        const y = yAt(vals[i]);
+        if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+
+  function drawCharts() {
+    drawChart(el.chartRps, [
+      { values: state.hist.rps, color: "#58a6ff", width: 2 },
+      { values: state.hist.accepted, color: "#76b900", width: 2 },
+    ], 5, "");
+    drawChart(el.chartPower, [
+      { values: state.hist.power, color: "#76b900", width: 2 },
+      { values: state.hist.target, color: "#f85149", width: 2, dashed: true },
+    ], 5, "MW");
+  }
+
+  function niceMax(v) {
+    if (v <= 1) return 1;
+    const pow = Math.pow(10, Math.floor(Math.log10(v)));
+    const n = v / pow;
+    let step = 1;
+    if (n > 5) step = 10; else if (n > 2) step = 5; else if (n > 1) step = 2;
+    return step * pow;
+  }
+
+  function fmtNum(v) {
+    if (v >= 100) return v.toFixed(0);
+    if (v >= 10) return v.toFixed(0);
+    return v.toFixed(1);
+  }
+
+  function addNotice(n) {
+    const li = document.createElement("li");
+    const t = new Date(n.time).toLocaleTimeString();
+    const icon = n.kind === "target" ? "\u2699" : n.kind === "breach" ? "\u26A0" : "\u21C5";
+    li.innerHTML =
+      "<span class=\"notice-" + esc(n.level || "info") + "\">" + icon + " " + esc(n.text) + "</span> " +
+      "<span class=\"ev-time\">" + t + "</span>";
+    el.activity.insertBefore(li, el.activity.firstChild);
+    while (el.activity.childElementCount > MAX_ACTIVITY) {
+      el.activity.removeChild(el.activity.lastChild);
+    }
+  }
+
+  window.addEventListener("resize", drawCharts);
+
   // ---- WebSocket ----------------------------------------------------------
   function connect() {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
@@ -188,6 +354,12 @@
           break;
         case "stats":
           if (env.stats) renderStats(env.stats);
+          break;
+        case "power":
+          if (env.power) renderPower(env.power);
+          break;
+        case "notice":
+          if (env.notice) addNotice(env.notice);
           break;
       }
     };

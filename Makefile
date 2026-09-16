@@ -12,9 +12,12 @@ MISE_EXEC := "$(MISE)" exec --cd "$(ROOT_DIR)" --
 PERFORMANCE_E2E_ENV ?= PERF_TEST_PAIRS=1 PERF_TEST_DURATION=2s PERF_TEST_WARMUP=1s PERF_PUBLISH_DELAY=5ms PERF_MIN_SUCCESS_RATE=99
 FUNCTIONAL_E2E_TIMEOUT ?= 3m
 CSC_BROKER_URL ?= tcp://172.18.200.1:1883
-.PHONY: add-license-headers check clean dashboard-demo dashboard-ui dummy-bms e2e help local-up perf-benchmark skaffold-dev test test-dev third-party-licenses
+.PHONY: add-license-headers check clean dashboard-demo dashboard-ui dummy-bms e2e help inference-api loadgen local-up perf-benchmark set-load-target skaffold-dev test test-dev third-party-licenses
 
 DASHBOARD_DEMO_ARGS ?=
+LOADGEN_ARGS ?=
+SET_LOAD_TARGET_ARGS ?=
+INFERENCE_URL ?= http://172.18.200.1/v1/chat/completions
 
 add-license-headers: ## Add SPDX license headers across repository sources
 	$(MISE_EXEC) bash scripts/license.sh fix
@@ -69,6 +72,15 @@ dashboard-ui: ## Port-forward the DSX Live Dashboard UI to http://localhost:8080
 
 dashboard-demo: ## Publish sample OAuth2-authorized events for the dashboard (needs broker+IdP port-forwards)
 	$(MISE_EXEC) go -C local/dashboard run ./cmd/demo-publisher $(DASHBOARD_DEMO_ARGS)
+
+inference-api: ## Port-forward the mock AI inference API to http://localhost:8081
+	$(MISE_EXEC) kubectl --context kind-dsx-exchange -n csc-event-bus port-forward svc/dsx-inference 8081:80
+
+loadgen: ## Drive synthetic load at the mock inference endpoint via the site gateway (set LOADGEN_ARGS)
+	$(MISE_EXEC) go -C local/inference-mock run ./cmd/loadgen --url "$(INFERENCE_URL)" $(LOADGEN_ARGS)
+
+set-load-target: ## Publish a DSX Flex power cap (LoadTargetSet) to the exchange via the gateway (set SET_LOAD_TARGET_ARGS)
+	$(MISE_EXEC) go -C local/inference-mock run ./cmd/set-load-target --broker "$(CSC_BROKER_URL)" --idp http://172.18.200.1 $(SET_LOAD_TARGET_ARGS)
 
 help: ## Show available repository targets
 	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' "$(ROOT_DIR)/Makefile" | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-28s %s\n", $$1, $$2}'

@@ -90,6 +90,26 @@ global:
                 allow: ["demo.>", "test.>"]
               sub:
                 allow: ["demo.>", "_INBOX.>"]
+          # Mock AI inference service acting as the DSX Flex agent: receives load
+          # targets from ISVs and publishes power state, breach alerts, telemetry.
+          inference:
+            azp: "inference"
+            account: "CSC"
+            permissions:
+              pub:
+                allow: ["grid.v1.dsx-flex-agent.>", "dsx.inference.>", "_INBOX.>"]
+              sub:
+                allow: ["grid.v1.isv.*.loadtarget.set", "_INBOX.>"]
+          # DSX Flex ISV: publishes grid load target (power cap) commands and may
+          # observe power state feedback from the agent.
+          grid-isv:
+            azp: "grid-isv"
+            account: "CSC"
+            permissions:
+              pub:
+                allow: ["grid.v1.isv.>"]
+              sub:
+                allow: ["grid.v1.dsx-flex-agent.>", "_INBOX.>"]
         mtls:
           mqtt-client:
             identity: "CN=mqtt-client.csc"

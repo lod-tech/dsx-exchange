@@ -1,0 +1,13 @@
+# Copyright 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: dsx-inference
+description: |
+  DSX mock AI inference service for local verification. Exposes an
+  OpenAI-compatible API where each in-flight request draws a fixed amount of
+  power, and acts as a DSX Flex agent that enforces load targets from the event
+  bus. Local fixture chart only.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

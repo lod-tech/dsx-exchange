@@ -1,0 +1,65 @@
+# Copyright 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+image:
+  repository: dsx-exchange/dsx-inference
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+# HTTP port the OpenAI-compatible API listens on inside the container.
+httpPort: 8080
+
+# DSX Flex agent identity and feed.
+agentID: maxlps
+feedTag: ai-factory-main
+model: dsx-mock-llm
+
+# Power model (megawatts).
+power:
+  perRequestMW: 1
+  maxMW: 96
+  minMW: 0
+  # Default cap when no load target is active.
+  defaultMW: 96
+
+# Admission control (best_effort strategy).
+admission:
+  maxQueue: 256
+  maxQueueWait: 5s
+
+# Request simulation.
+simulation:
+  prefillLatency: 300ms
+  tokensPerSec: 40
+  defaultMaxTokens: 64
+
+# NATS endpoint (in-namespace service).
+natsURL: "nats://nats:4222"
+
+# OAuth2 client credentials for the DSX Flex event plane (CSC account).
+oauth:
+  idpURL: "http://event-bus.idp.svc.cluster.local:5556"
+  clientID: "inference"
+  clientSecret: "inference-secret"
+  scope: "mqtt"
+
+# Publishing cadence.
+statusInterval: 2s
+telemetryInterval: 1s
+
+# Expose the API through the shared gateway (HTTP listener on :80).
+httpRoute:
+  enabled: true
+  gatewayName: shared-gateway
+  gatewayNamespace: csc-gateway
+  pathPrefix: /v1
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: "1"
+    memory: 256Mi

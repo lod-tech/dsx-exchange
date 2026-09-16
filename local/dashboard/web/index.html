@@ -46,6 +46,31 @@ SPDX-License-Identifier: Apache-2.0
       </div>
     </section>
 
+    <section class="power-section panel">
+      <div class="panel-head">
+        <h2>AI Factory Power <span class="site" id="power-feed">ai-factory-main</span></h2>
+        <div id="breach-banner" class="breach-banner hidden"></div>
+      </div>
+      <div class="power-stats">
+        <div class="pstat"><div class="pstat-value" id="p-power">0</div><div class="pstat-label">Power (MW)</div></div>
+        <div class="pstat"><div class="pstat-value" id="p-target">&#8734;</div><div class="pstat-label">Power target (MW)</div></div>
+        <div class="pstat"><div class="pstat-value" id="p-rps">0</div><div class="pstat-label">Requests / sec</div></div>
+        <div class="pstat"><div class="pstat-value" id="p-inflight">0</div><div class="pstat-label">In-flight (1&nbsp;MW each)</div></div>
+        <div class="pstat"><div class="pstat-value" id="p-shed">0</div><div class="pstat-label">Shed / sec</div></div>
+        <div class="pstat"><div class="pstat-value" id="p-compliant">&mdash;</div><div class="pstat-label">Compliance</div></div>
+      </div>
+      <div class="charts">
+        <div class="chart-card">
+          <div class="chart-title">Requests / sec (offered vs served)</div>
+          <canvas id="chart-rps" height="150"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Power usage vs target (MW)</div>
+          <canvas id="chart-power" height="150"></canvas>
+        </div>
+      </div>
+    </section>
+
     <main class="grid">
       <section class="panel">
         <div class="panel-head">

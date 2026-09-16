@@ -67,13 +67,41 @@ type Stats struct {
 	EventConnected  bool    `json:"eventConnected"`
 }
 
+// Power is the latest AI-factory power snapshot derived from the mock inference
+// service telemetry and DSX Flex breach alerts.
+type Power struct {
+	Time           time.Time `json:"time"`
+	FeedTag        string    `json:"feedTag"`
+	RPS            float64   `json:"rps"`
+	AcceptedPerSec float64   `json:"acceptedPerSec"`
+	ShedPerSec     float64   `json:"shedPerSec"`
+	InFlight       int       `json:"inFlight"`
+	PowerMW        float64   `json:"powerMw"`
+	TargetMW       float64   `json:"targetMw"`
+	TargetActive   bool      `json:"targetActive"`
+	Compliant      bool      `json:"compliant"`
+	BreachStatus   string    `json:"breachStatus,omitempty"`
+	BreachSeverity string    `json:"breachSeverity,omitempty"`
+}
+
+// Notice is an activity-feed note for DSX Flex control-plane events (load target
+// set, breach transitions, ramp events).
+type Notice struct {
+	Kind  string    `json:"kind"`  // target | breach | ramp
+	Level string    `json:"level"` // info | warning | critical
+	Text  string    `json:"text"`
+	Time  time.Time `json:"time"`
+}
+
 // Envelope is the WebSocket message wrapper broadcast to browsers.
 type Envelope struct {
-	Type        string          `json:"type"` // connections | events | lifecycle | stats
+	Type        string          `json:"type"` // connections | events | lifecycle | stats | power | notice
 	Connections []Connection    `json:"connections,omitempty"`
 	Events      []Event         `json:"events,omitempty"`
 	Lifecycle   *LifecycleEvent `json:"lifecycle,omitempty"`
 	Stats       *Stats          `json:"stats,omitempty"`
+	Power       *Power          `json:"power,omitempty"`
+	Notice      *Notice         `json:"notice,omitempty"`
 }
 
 func itoa(v uint64) string {

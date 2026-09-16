@@ -15,3 +15,6 @@ requires:
 - path: local/dashboard/skaffold.yaml
   configs:
   - dashboard
+- path: local/inference-mock/skaffold.yaml
+  configs:
+  - inference

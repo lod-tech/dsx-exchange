@@ -131,6 +131,9 @@ For the testing strategy (functional and performance coverage), see
 - `make dummy-bms`: publish looping dummy BMS data.
 - `make dashboard-ui`: port-forward the DSX Live Dashboard to `http://localhost:8080`.
 - `make dashboard-demo`: publish sample OAuth2-authorized events for the dashboard.
+- `make inference-api`: port-forward the mock AI inference API to `http://localhost:8081`.
+- `make loadgen`: drive synthetic load at the mock inference endpoint.
+- `make set-load-target`: publish a DSX Flex power cap (LoadTargetSet) to the exchange.
 - `make clean`: delete the Kind cluster and generated local artifacts.
 - `make help`: show all available targets.
 
@@ -141,6 +144,15 @@ client connections (via the NATS system account) and a live event feed from the
 CSC account. Open it with `make dashboard-ui`; see
 [dashboard/README.md](dashboard/README.md) for the end-to-end demo and how to
 connect your own OAuth2 application.
+
+### AI Factory Power (DSX Flex)
+
+The local stack also deploys the mock AI inference service in `csc-event-bus`. It
+serves an OpenAI-compatible API where each in-flight request draws 1 MW, and acts
+as a DSX Flex agent that enforces power caps received from the event bus. Drive
+load with `make loadgen`, cap power with `make set-load-target`, and watch the
+"AI Factory Power" charts on the dashboard. See
+[inference-mock/README.md](inference-mock/README.md) for the full demo.
 
 ## Development
 

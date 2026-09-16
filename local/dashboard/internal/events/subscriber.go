@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -24,6 +25,8 @@ import (
 type Sink interface {
 	PushEvent(model.Event)
 	SetEventConnected(bool)
+	SetPower(model.Power)
+	PushNotice(model.Notice)
 }
 
 // Options configures the event subscriber.
@@ -44,6 +47,12 @@ type Subscriber struct {
 	nc   *nats.Conn
 	sink Sink
 	opts Options
+
+	mu             sync.Mutex
+	lastPower      model.Power
+	havePower      bool
+	breachStatus   string
+	breachSeverity string
 }
 
 // Connect obtains an OAuth2 token source and dials NATS on the CSC account.
@@ -125,6 +134,11 @@ func (s *Subscriber) Close() {
 
 func (s *Subscriber) handle(msg *nats.Msg) {
 	if s.opts.DropInbox && strings.HasPrefix(msg.Subject, "_INBOX.") {
+		return
+	}
+	// DSX Flex power-control subjects and inference telemetry drive the power UI
+	// rather than the raw event feed.
+	if s.dispatchPower(msg.Subject, msg.Data) {
 		return
 	}
 	payload := msg.Data

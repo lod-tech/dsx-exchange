@@ -1,0 +1,18 @@
+# Copyright 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dsx-inference.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dsx-inference.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "dsx-inference.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

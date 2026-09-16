@@ -1,0 +1,88 @@
+# Copyright 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- $image := .Values.image | default dict }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dsx-inference.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dsx-inference.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "dsx-inference.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dsx-inference.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: inference
+          image: "{{ required "image.repository is required" $image.repository }}:{{ required "image.tag is required" $image.tag }}"
+          imagePullPolicy: {{ $image.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: INFERENCE_HTTP_ADDR
+              value: ":{{ .Values.httpPort }}"
+            - name: INFERENCE_AGENT_ID
+              value: {{ .Values.agentID | quote }}
+            - name: INFERENCE_FEED_TAG
+              value: {{ .Values.feedTag | quote }}
+            - name: INFERENCE_MODEL
+              value: {{ .Values.model | quote }}
+            - name: INFERENCE_PER_REQUEST_MW
+              value: {{ .Values.power.perRequestMW | quote }}
+            - name: INFERENCE_POWER_MAX_MW
+              value: {{ .Values.power.maxMW | quote }}
+            - name: INFERENCE_POWER_MIN_MW
+              value: {{ .Values.power.minMW | quote }}
+            - name: INFERENCE_DEFAULT_MW
+              value: {{ .Values.power.defaultMW | quote }}
+            - name: INFERENCE_MAX_QUEUE
+              value: {{ .Values.admission.maxQueue | quote }}
+            - name: INFERENCE_MAX_QUEUE_WAIT
+              value: {{ .Values.admission.maxQueueWait | quote }}
+            - name: INFERENCE_PREFILL_LATENCY
+              value: {{ .Values.simulation.prefillLatency | quote }}
+            - name: INFERENCE_TOKENS_PER_SEC
+              value: {{ .Values.simulation.tokensPerSec | quote }}
+            - name: INFERENCE_DEFAULT_MAX_TOKENS
+              value: {{ .Values.simulation.defaultMaxTokens | quote }}
+            - name: INFERENCE_NATS_URL
+              value: {{ .Values.natsURL | quote }}
+            - name: INFERENCE_OAUTH_IDP_URL
+              value: {{ .Values.oauth.idpURL | quote }}
+            - name: INFERENCE_OAUTH_CLIENT_ID
+              value: {{ .Values.oauth.clientID | quote }}
+            - name: INFERENCE_OAUTH_CLIENT_SECRET
+              value: {{ .Values.oauth.clientSecret | quote }}
+            - name: INFERENCE_OAUTH_SCOPE
+              value: {{ .Values.oauth.scope | quote }}
+            - name: INFERENCE_STATUS_INTERVAL
+              value: {{ .Values.statusInterval | quote }}
+            - name: INFERENCE_TELEMETRY_INTERVAL
+              value: {{ .Values.telemetryInterval | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpPort }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
