@@ -110,6 +110,21 @@ global:
                 allow: ["grid.v1.isv.>"]
               sub:
                 allow: ["grid.v1.dsx-flex-agent.>", "_INBOX.>"]
+          # lod-api (LOD-1984): subscribe-only consumer of DSX Flex power-state
+          # and breach feeds. No publish rights on data subjects, so it cannot
+          # act as an ISV.
+          lod-api:
+            azp: "lod-api"
+            account: "CSC"
+            permissions:
+              pub:
+                allow: ["_INBOX.>"]
+              sub:
+                allow:
+                  - "grid.v1.dsx-flex-agent.*.powerstate.status"
+                  - "grid.v1.dsx-flex-agent.*.powerbreach"
+                  - "grid.v1.infra.*.powerbreach.enforcement"
+                  - "_INBOX.>"
         mtls:
           mqtt-client:
             identity: "CN=mqtt-client.csc"
